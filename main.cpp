@@ -452,70 +452,6 @@ void draw_pose(string img_path, vector<vector<float>> pose_entries, int num_keyp
     destroyAllWindows();
 }
 
-void dev()
-{
-    string img_path = "bus.jpg";
-    int upsample_ratio = 4;
-    float scale;
-    Vec4i pad(0, 0, 0, 0);
-    Mat img = input_preprocess(img_path, scale, pad);
-
-    string model_path = "human-pose-estimation256.onnx";
-    auto net = readmodel(model_path);
-    auto blob = dnn::blobFromImage(img);
-    net.setInput(blob);
-    vector<Mat> outputs;
-    net.forward(outputs, net.getUnconnectedOutLayersNames());
-    
-    vector<Mat> stage2_heatmaps;
-    dnn::imagesFromBlob(outputs[0], stage2_heatmaps);
-    Mat heatmaps;
-    
-    float* matdata = stage2_heatmaps[0].ptr<float>();
-    for (int i = 0; i < 32; i++) {
-        cout << i << endl;
-        cout << "stage2 data at " << matdata[i + 32] << endl;
-        cout << "stage2 mat at " << stage2_heatmaps[0].at<float>(1, i) << endl;
-
-    }
-    cout << stage2_heatmaps[0].size << endl;
-
-    resize(stage2_heatmaps[0], heatmaps, Size(0, 0), upsample_ratio, upsample_ratio, INTER_CUBIC);
-
-    //vector<Mat> stage2_pafs;
-    //dnn::imagesFromBlob(outputs[1], stage2_pafs);
-    //Mat pafs;
-    //resize(stage2_pafs[0], pafs, Size(0, 0), upsample_ratio, upsample_ratio, INTER_CUBIC);
-
-    //cout << "heatmaps = " << heatmaps.size << " x " << heatmaps.channels() << endl;
-    //cout << "pafs = " << pafs.size << " x " << pafs.channels() << endl;
-
-    //// decode
-    //int total_keypoints_num = 0;
-    //int num_keypoints = 18;
-    //vector<Mat> heatmaps_kpts;
-    //vector<vector<Vec4f>> all_keypoints_by_type;
-    //split(heatmaps, heatmaps_kpts);
-
-    //for (int i = 0; i < num_keypoints; i++) {
-    //    total_keypoints_num += extract_keypoints(heatmaps_kpts[i], all_keypoints_by_type, total_keypoints_num);
-    //}
-
-    /////*cout << "all kpts by type \n";
-    ////for (auto all_kpts : all_keypoints_by_type)
-    ////    for (auto kpts : all_kpts)
-    ////        cout << kpts << endl;*/
-
-    //vector<vector<float>> pose_entries;
-    //vector<Vec4f> all_keypoints;
-
-    //group_keypoints(pafs, all_keypoints_by_type, pose_entries, all_keypoints);
-
-    //draw_pose(img_path, pose_entries, num_keypoints, all_keypoints, scale, pad);
-
-}
-
-
 Mat data2mat(int img_scale, int channels, vector<Mat> outputs, int outputLayer)
 {
     int net_size = 32;
@@ -554,7 +490,6 @@ void dev1()
 
     net.forward(outputs, net.getUnconnectedOutLayersNames());
 
-    // float* stage2_heatmaps = (float*)outputs[0].data;
     const int heatmap_size = 19;
     const int pafs_size = 38;
     int img_scale = img.cols / 8;
@@ -571,8 +506,7 @@ void dev1()
     int num_keypoints = 18;
     vector<Mat> heatmaps_kpts;
     vector<vector<Vec4f>> all_keypoints_by_type;
-    split(heatmaps, heatmaps_kpts);
-    
+    split(heatmaps, heatmaps_kpts);    
 
     for (int i = 0; i < num_keypoints; i++) {
         total_keypoints_num += extract_keypoints(heatmaps_kpts[i], all_keypoints_by_type, total_keypoints_num);
@@ -584,39 +518,6 @@ void dev1()
     group_keypoints(pafs, all_keypoints_by_type, pose_entries, all_keypoints);
 
     draw_pose(img_path, pose_entries, num_keypoints, all_keypoints, scale, pad);
-}
-
-void test()
-{
-    int sizes[3] = { 2, 3, 8 }; // array of sizes for each dimension
-    cv::Mat m(3, sizes, CV_32F, cv::Scalar(0));
-
-    for (int i = 0; i < m.total(); i++)
-        *((float*)m.data + i) = (float)i;
-
-    vector<Mat> vms;
-
-    for (int p = 0; p < m.size[2]; p++) {
-        float* ind = (float*)m.data + p * sizes[0] * sizes[1];
-        vms.push_back(Mat(2, sizes, CV_32F, ind).clone());
-    }
-
-    cout << "size of vms = " << vms.size() << endl;
-    for (int i = 0; i < vms.size(); i++) {
-        cout << i << endl;
-        cout << vms[i] << endl;
-    }
-
-    for (int i = 0; i < vms.size(); i++) {
-        cout << i << endl;
-        // Mat tmp;
-        resize(vms[i], vms[i], Size(0, 0), 4, 4, INTER_CUBIC);
-        cout << vms[i] << endl;
-    }
-
-    Mat resized;
-    merge(vms, resized);
-    cout << "resized = " << resized.channels() << endl;
 }
 
 int main()
